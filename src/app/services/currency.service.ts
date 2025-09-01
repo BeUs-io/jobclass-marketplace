@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
+import { ExchangeRateService } from './exchange-rate.service';
 
 export interface Currency {
   code: string;
@@ -32,7 +34,7 @@ export class CurrencyService {
   private currentCurrencySubject = new BehaviorSubject<Currency>(this.currencies[0]);
   public currentCurrency$ = this.currentCurrencySubject.asObservable();
 
-  constructor() {
+  constructor(private exchangeRateService?: ExchangeRateService) {
     // Load saved currency from localStorage
     const savedCurrency = localStorage.getItem('selectedCurrency');
     if (savedCurrency) {
@@ -40,6 +42,11 @@ export class CurrencyService {
       if (currency) {
         this.currentCurrencySubject.next(currency);
       }
+    }
+
+    // Update exchange rates from live API if available
+    if (this.exchangeRateService) {
+      this.updateExchangeRates();
     }
   }
 
@@ -111,16 +118,60 @@ export class CurrencyService {
     return toCurrency.exchangeRate / fromCurrency.exchangeRate;
   }
 
-  // Update exchange rates (would connect to real API in production)
-  async updateExchangeRates(): Promise<void> {
-    // In production, this would fetch from a real exchange rate API
-    // For now, we'll simulate with slight variations
-    this.currencies.forEach(currency => {
-      if (currency.code !== 'USD') {
-        // Simulate small fluctuations (±2%)
-        const fluctuation = 0.98 + Math.random() * 0.04;
-        currency.exchangeRate = currency.exchangeRate * fluctuation;
-      }
+  // Update exchange rates from live API
+  updateExchangeRates(): void {
+    if (!this.exchangeRateService) return;
+
+    this.exchangeRateService.getExchangeRates().subscribe(rates => {
+      this.currencies.forEach(currency => {
+        if (currency.code !== 'USD' && rates.rates[currency.code]) {
+          currency.exchangeRate = rates.rates[currency.code];
+        }
+      });
     });
+  }
+
+  // Convert with live rates if available
+  convertFromUSDLive(amountUSD: number, toCurrencyCode?: string): Observable<number> {
+    const currency = toCurrencyCode
+      ? this.currencies.find(c => c.code === toCurrencyCode)
+      : this.currentCurrencySubject.value;
+
+    if (!currency || !this.exchangeRateService) {
+      return of(this.convertFromUSD(amountUSD, toCurrencyCode));
+    }
+
+    return this.exchangeRateService.convertCurrency(amountUSD, 'USD', currency.code);
+  }
+
+  // Convert with regional pricing
+  convertWithRegionalPricing(amountUSD: number, toCurrencyCode?: string): Observable<number> {
+    if (!this.exchangeRateService) {
+      return of(this.convertFromUSD(amountUSD, toCurrencyCode));
+    }
+
+    const currency = toCurrencyCode || this.currentCurrencySubject.value.code;
+    const adjustedPrice = this.exchangeRateService.applyRegionalPricing(amountUSD);
+
+    return this.exchangeRateService.convertCurrency(adjustedPrice, 'USD', currency);
+  }
+
+  // Get price with PPP adjustment
+  getPPPAdjustedPrice(basePrice: number): Observable<{
+    originalPrice: number;
+    adjustedPrice: number;
+    discount: number;
+    currency: string;
+  }> {
+    if (!this.exchangeRateService) {
+      return of({
+        originalPrice: basePrice,
+        adjustedPrice: this.convertFromUSD(basePrice),
+        discount: 0,
+        currency: this.currentCurrencySubject.value.code
+      });
+    }
+
+    return this.exchangeRateService.getPPPAdjustedPrice(basePrice);
   }
 }
