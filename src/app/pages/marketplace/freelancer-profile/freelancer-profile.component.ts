@@ -1,0 +1,1 @@
+import{Component}from'@angular/core';import{CommonModule}from'@angular/common';@Component({selector:'app-freelancer-profile',standalone:true,imports:[CommonModule],template:'<div>Freelancer Profile</div>'})export class FreelancerProfileComponent{}

@@ -1,0 +1,1 @@
+import{Component}from'@angular/core';import{CommonModule}from'@angular/common';@Component({selector:'app-portfolio',standalone:true,imports:[CommonModule],template:'<div>Portfolio</div>'})export class PortfolioComponent{}

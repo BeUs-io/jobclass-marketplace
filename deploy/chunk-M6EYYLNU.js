@@ -1,0 +1,1 @@
+var r=function(t){return t.FULL_TIME="Full-time",t.PART_TIME="Part-time",t.CONTRACT="Contract",t.TEMPORARY="Temporary",t.INTERNSHIP="Internship",t.PERMANENT="Permanent",t.OPTIONAL="Optional",t}(r||{});export{r as a};

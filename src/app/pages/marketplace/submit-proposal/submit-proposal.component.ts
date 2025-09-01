@@ -1,0 +1,1 @@
+import{Component}from'@angular/core';import{CommonModule}from'@angular/common';@Component({selector:'app-submit-proposal',standalone:true,imports:[CommonModule],template:'<div>Submit Proposal</div>'})export class SubmitProposalComponent{}

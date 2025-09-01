@@ -1,0 +1,1 @@
+import{Component}from'@angular/core';import{CommonModule}from'@angular/common';@Component({selector:'app-manage-orders',standalone:true,imports:[CommonModule],template:'<div>Manage Orders</div>'})export class ManageOrdersComponent{}
