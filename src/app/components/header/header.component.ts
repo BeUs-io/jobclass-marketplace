@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { AuthService, User } from '../../services/auth.service';
 import { RealTimeNotificationService, NotificationBadges } from '../../services/real-time-notification.service';
 import { FreelanceMarketplaceService } from '../../services/freelance.service';
+import { CurrencyService, Currency } from '../../services/currency.service';
+import { TranslationService, Language } from '../../services/translation.service';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -13,6 +15,58 @@ import { Observable } from 'rxjs';
   imports: [CommonModule, RouterLink, RouterLinkActive, FormsModule],
   template: `
     <header [class.shadow-md]="isScrolled" class="sticky top-0 z-50 bg-white transition-shadow duration-300">
+      <!-- Top Bar with Language and Currency -->
+      <div class="bg-gray-50 border-b">
+        <div class="container mx-auto px-4">
+          <div class="flex items-center justify-between py-2">
+            <div class="flex items-center gap-4 text-sm">
+              <!-- Language Selector -->
+              <div class="relative">
+                <button (click)="toggleLanguageMenu()" class="flex items-center gap-2 hover:text-primary">
+                  <span>{{ currentLanguage.flag }}</span>
+                  <span>{{ currentLanguage.nativeName }}</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+                <div *ngIf="showLanguageMenu" class="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg py-2 z-50">
+                  <button *ngFor="let lang of languages"
+                          (click)="selectLanguage(lang.code)"
+                          class="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 w-full text-left">
+                    <span>{{ lang.flag }}</span>
+                    <span>{{ lang.nativeName }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Currency Selector -->
+              <div class="relative">
+                <button (click)="toggleCurrencyMenu()" class="flex items-center gap-2 hover:text-primary">
+                  <span>{{ currentCurrency.symbol }}</span>
+                  <span>{{ currentCurrency.code }}</span>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+                <div *ngIf="showCurrencyMenu" class="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg py-2 z-50 max-h-64 overflow-y-auto">
+                  <button *ngFor="let currency of currencies"
+                          (click)="selectCurrency(currency.code)"
+                          class="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 w-full text-left whitespace-nowrap">
+                    <span class="font-mono">{{ currency.symbol }}</span>
+                    <span>{{ currency.code }} - {{ currency.name }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-sm text-gray-600">
+              {{ t('common.currency') }}: <span class="font-semibold">{{ currentCurrency.code }}</span> |
+              {{ t('common.language') }}: <span class="font-semibold">{{ currentLanguage.name }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Mode Switcher Bar -->
       <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2">
         <div class="container mx-auto px-4">
@@ -66,10 +120,10 @@ import { Observable } from 'rxjs';
             <!-- Job Seeker / Employer Navigation -->
             <ng-container *ngIf="currentMode === 'job-seeker' || currentMode === 'employer'">
               <a routerLink="/jobs" routerLinkActive="text-primary" class="text-gray-700 hover:text-primary transition-colors">
-                Browse Jobs
+                {{ t('common.jobs') }}
               </a>
               <a routerLink="/companies" routerLinkActive="text-primary" class="text-gray-700 hover:text-primary transition-colors">
-                Companies
+                {{ t('common.companies') }}
               </a>
               <a routerLink="/categories" routerLinkActive="text-primary" class="text-gray-700 hover:text-primary transition-colors">
                 Categories
@@ -79,13 +133,13 @@ import { Observable } from 'rxjs';
             <!-- Freelancer / Client Navigation -->
             <ng-container *ngIf="currentMode === 'freelancer' || currentMode === 'client'">
               <a routerLink="/marketplace" routerLinkActive="text-primary" class="text-gray-700 hover:text-primary transition-colors">
-                Marketplace
+                {{ t('common.marketplace') }}
               </a>
               <a routerLink="/services" routerLinkActive="text-primary" class="text-gray-700 hover:text-primary transition-colors">
-                Browse Services
+                {{ t('common.services') }}
               </a>
               <a routerLink="/projects" routerLinkActive="text-primary" class="text-gray-700 hover:text-primary transition-colors">
-                Find Projects
+                {{ t('common.projects') }}
               </a>
             </ng-container>
 
@@ -116,7 +170,7 @@ import { Observable } from 'rxjs';
                 Create Service
               </button>
               <button (click)="toggleLoginModal()" class="btn btn-primary">
-                Sign In
+                {{ t('common.login') }}
               </button>
             </ng-container>
 
@@ -130,7 +184,7 @@ import { Observable } from 'rxjs';
                 Post a Project
               </button>
               <button *ngIf="currentMode === 'freelancer'" routerLink="/freelancer-dashboard" class="btn btn-outline">
-                Dashboard
+                {{ t('common.dashboard') }}
               </button>
 
               <!-- Notifications -->
@@ -169,7 +223,7 @@ import { Observable } from 'rxjs';
                   class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50"
                 >
                   <a routerLink="/profile" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                    Profile
+                    {{ t('common.profile') }}
                   </a>
 
                   <!-- Job Seeker Options -->
@@ -188,7 +242,7 @@ import { Observable } from 'rxjs';
                   <!-- Freelancer Options -->
                   <ng-container *ngIf="currentMode === 'freelancer'">
                     <a routerLink="/freelancer-dashboard" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                      Dashboard
+                      {{ t('common.dashboard') }}
                     </a>
                     <a routerLink="/manage-orders" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
                       My Orders
@@ -229,7 +283,7 @@ import { Observable } from 'rxjs';
 
                   <hr class="my-2">
                   <button (click)="logout()" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
-                    Logout
+                    {{ t('common.logout') }}
                   </button>
                 </div>
               </div>
@@ -248,11 +302,25 @@ import { Observable } from 'rxjs';
         <!-- Mobile Menu -->
         <div *ngIf="isMobileMenuOpen" class="md:hidden py-4 border-t animate-slide-down">
           <div class="flex flex-col space-y-4">
+            <!-- Language and Currency Selectors for Mobile -->
+            <div class="flex gap-4 pb-4 border-b">
+              <select (change)="selectLanguage($any($event.target).value)" class="flex-1 px-3 py-2 border rounded-lg">
+                <option *ngFor="let lang of languages" [value]="lang.code" [selected]="lang.code === currentLanguage.code">
+                  {{ lang.flag }} {{ lang.nativeName }}
+                </option>
+              </select>
+              <select (change)="selectCurrency($any($event.target).value)" class="flex-1 px-3 py-2 border rounded-lg">
+                <option *ngFor="let currency of currencies" [value]="currency.code" [selected]="currency.code === currentCurrency.code">
+                  {{ currency.symbol }} {{ currency.code }}
+                </option>
+              </select>
+            </div>
+
             <a routerLink="/jobs" routerLinkActive="text-primary" class="text-gray-700 hover:text-primary transition-colors">
-              Browse Jobs
+              {{ t('common.jobs') }}
             </a>
             <a routerLink="/companies" routerLinkActive="text-primary" class="text-gray-700 hover:text-primary transition-colors">
-              Companies
+              {{ t('common.companies') }}
             </a>
             <a routerLink="/categories" routerLinkActive="text-primary" class="text-gray-700 hover:text-primary transition-colors">
               Categories
@@ -265,7 +333,7 @@ import { Observable } from 'rxjs';
                 Post a Job
               </button>
               <button (click)="toggleLoginModal()" class="btn btn-primary w-full">
-                Sign In
+                {{ t('common.login') }}
               </button>
             </div>
           </div>
@@ -275,7 +343,7 @@ import { Observable } from 'rxjs';
       <!-- Login Modal -->
       <div *ngIf="showLoginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50" (click)="closeModalOnBackdrop($event)">
         <div class="bg-white rounded-lg p-8 max-w-md w-full animate-slide-up" (click)="$event.stopPropagation()">
-          <h2 class="text-2xl font-bold mb-6">Sign In</h2>
+          <h2 class="text-2xl font-bold mb-6">{{ t('common.login') }}</h2>
           <form (submit)="handleLogin($event)">
             <div class="mb-4">
               <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -307,7 +375,7 @@ import { Observable } from 'rxjs';
               [disabled]="isLoggingIn"
               class="btn btn-primary w-full mb-4"
             >
-              {{isLoggingIn ? 'Signing In...' : 'Sign In'}}
+              {{isLoggingIn ? 'Signing In...' : t('common.login')}}
             </button>
             <p class="text-center text-sm text-gray-500 mb-4">
               Demo accounts:<br>
@@ -316,7 +384,7 @@ import { Observable } from 'rxjs';
             </p>
             <p class="text-center text-sm text-gray-600">
               Don't have an account?
-              <a href="#" class="text-primary hover:underline">Sign Up</a>
+              <a href="#" class="text-primary hover:underline">{{ t('common.register') }}</a>
             </p>
           </form>
         </div>
@@ -330,10 +398,19 @@ export class HeaderComponent implements OnInit {
   isMobileMenuOpen = false;
   showLoginModal = false;
   showUserMenu = false;
+  showLanguageMenu = false;
+  showCurrencyMenu = false;
+
   currentUser$!: Observable<User | null>;
   unreadNotifications$!: Observable<number>;
   badges$!: Observable<NotificationBadges>;
   currentMode: 'job-seeker' | 'freelancer' | 'employer' | 'client' = 'job-seeker';
+
+  // Language and Currency
+  languages: Language[] = [];
+  currentLanguage!: Language;
+  currencies: Currency[] = [];
+  currentCurrency!: Currency;
 
   // Login form data
   loginEmail = '';
@@ -344,7 +421,9 @@ export class HeaderComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private notificationService: RealTimeNotificationService,
-    private freelanceService: FreelanceMarketplaceService
+    private freelanceService: FreelanceMarketplaceService,
+    private currencyService: CurrencyService,
+    private translationService: TranslationService
   ) {}
 
   ngOnInit() {
@@ -352,6 +431,22 @@ export class HeaderComponent implements OnInit {
     this.unreadNotifications$ = this.notificationService.getUnreadCount();
     this.badges$ = this.notificationService.badges$;
     this.currentMode = this.freelanceService.getUserMode();
+
+    // Initialize language and currency
+    this.languages = this.translationService.getLanguages();
+    this.currentLanguage = this.translationService.getCurrentLanguage();
+    this.currencies = this.currencyService.getCurrencies();
+    this.currentCurrency = this.currencyService.getCurrentCurrency();
+
+    // Subscribe to language changes
+    this.translationService.currentLanguage$.subscribe(lang => {
+      this.currentLanguage = lang;
+    });
+
+    // Subscribe to currency changes
+    this.currencyService.currentCurrency$.subscribe(currency => {
+      this.currentCurrency = currency;
+    });
   }
 
   switchMode(mode: 'job-seeker' | 'freelancer' | 'employer' | 'client') {
@@ -359,9 +454,43 @@ export class HeaderComponent implements OnInit {
     this.freelanceService.setUserMode(mode);
   }
 
+  toggleLanguageMenu() {
+    this.showLanguageMenu = !this.showLanguageMenu;
+    this.showCurrencyMenu = false;
+  }
+
+  toggleCurrencyMenu() {
+    this.showCurrencyMenu = !this.showCurrencyMenu;
+    this.showLanguageMenu = false;
+  }
+
+  selectLanguage(code: string) {
+    this.translationService.setLanguage(code);
+    this.showLanguageMenu = false;
+  }
+
+  selectCurrency(code: string) {
+    this.currencyService.setCurrency(code);
+    this.showCurrencyMenu = false;
+  }
+
+  // Translation helper
+  t(key: string): string {
+    return this.translationService.translate(key);
+  }
+
   @HostListener('window:scroll', [])
   onWindowScroll() {
     this.isScrolled = window.scrollY > 10;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.relative')) {
+      this.showLanguageMenu = false;
+      this.showCurrencyMenu = false;
+    }
   }
 
   toggleMobileMenu() {
